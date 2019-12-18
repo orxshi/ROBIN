@@ -79,9 +79,94 @@ void generate(double begin, double end, double inc, std::vector<double>& v)
     }
 }
 
-int main()
+void create_geo_file()
 {
     std::vector<double> xmainbody, xpylon, p;
+
+    generate(0.00001, 2.0, 0.1, xmainbody);
+    generate(0.400001, 1.018, 0.5, xpylon);
+    generate(0.0, 2*PI, 0.5, p);
+
+    std::ofstream out;
+    out.open("robin.geo");
+
+    out << "SetFactory(\"OpenCASCADE\");\n\n";
+
+    int gncurve = 0;
+    int gnpoint = 0;
+
+    {
+        out << "c = newll;\n\n";
+
+        int ncurve = 0;
+        for (double d: xmainbody)
+        {
+            out << "p = newp;\n";
+            int npoint = 0;
+            for (double r: p)
+            {
+                out << "Point(p+" << npoint << ") = {" << d << "," << MainBody::yl(d, r) << "," << MainBody::zl(d, r) << "};\n";
+                ++npoint;
+                ++gnpoint;
+            }
+
+            out << "\n";
+
+            out << "For i In {p:" << gnpoint << "}\n";
+            out << "SplineList" << gncurve << "[i-p] = i;\n";
+            out << "EndFor\n";
+            out << "SplineList" << gncurve << "[" << npoint << "] = p;\n";
+            out << "Spline(c+" << ncurve << ") = SplineList" << gncurve << "[];\n\n";
+            ++ncurve;
+        }
+
+        out << "ll = newll;\n";
+        out << "For j In {0:" << ncurve - 1 << "}\n";
+        out << "Curve Loop(ll+j) = c+j;\n";
+        out << "EndFor\n";
+        out << "ThruSections{ll:ll+" << ncurve - 1 << "}\n";
+    }
+
+
+    /*{
+        out << "c = newll;\n\n";
+
+        int ncurve = 0;
+
+        for (double d: xpylon)
+        {
+            out << "p = newp;\n";
+            int npoint = 0;
+            for (double r: p)
+            {
+                out << "Point(p+" << npoint << ") = {" << d << "," << Pylon::yl(d, r) << "," << Pylon::zl(d, r) << "};\n";
+                ++npoint;
+                ++gnpoint;
+            }
+
+            out << "\n";
+
+            out << "For i In {p:" << gnpoint << "}\n";
+            out << "SplineList" << gncurve << "[i-p] = i;\n";
+            out << "EndFor\n";
+            out << "SplineList" << gncurve << "[" << npoint << "] = p;\n";
+            out << "Spline(c+" << ncurve << ") = SplineList" << gncurve << "[];\n\n";
+            ++ncurve;
+        }
+
+        out << "ll = newll;\n";
+        out << "For j In {0:" << ncurve - 1 << "}\n";
+        out << "Curve Loop(ll+j) = c+j;\n";
+        out << "EndFor\n";
+        out << "ThruSections{ll:ll+" << ncurve - 1 << "}\n";
+    }*/
+
+    out.close();
+}
+
+int main()
+{
+    /*std::vector<double> xmainbody, xpylon, p;
 
     generate(0.00001, 2.0, 0.1, xmainbody);
     generate(0.400001, 1.018, 0.1, xpylon);
@@ -107,6 +192,10 @@ int main()
     }
 
     out.close();
+
+    convert();*/
+
+    create_geo_file();
 
     return 0;
 }
