@@ -140,7 +140,7 @@ def r(H, W, N, phi):
 
 xm = numpy.linspace(0.00001, 2, 10)
 xp = numpy.linspace(0.40001, 1.018, 10)
-p = numpy.linspace(0, 2*math.pi, 10)
+p = numpy.linspace(0, 2*math.pi, 20)
 
 def makepart(part, x):
     polygons = []
@@ -170,62 +170,66 @@ heli.purgeTouched()
 
 # make heli a solid
 s = Part.Solid(Part.Shell(heli.Shape.Faces))
-Part.show(s)
+#Part.show(s)
+s.exportStep("fuspyl.step")
+
+
+doc.removeObject("Shape")
+doc.removeObject("Shape001")
+doc.removeObject("Connected")
 
 # make a sphere
-sphere = Part.makeSphere(2,FreeCAD.Vector(1,0,0))
-Part.show(sphere)
+sphere = Part.makeSphere(10,FreeCAD.Vector(1,0,0))
+#Part.show(sphere)
 
 # cut heli from sphere
 cut = sphere.cut(s)
 Part.show(cut)
+cut.exportStep("cut_fuspyl.step")
 
 # extract seem of sphere
-import CompoundTools.CompoundFilter
-f = CompoundTools.CompoundFilter.makeCompoundFilter(name = 'CompoundFilter')
-f.Base = App.ActiveDocument.Shape004
-f.FilterType = 'window-volume'
-f.Proxy.execute(f)
-f.purgeTouched()
+#import CompoundTools.CompoundFilter
+#f = CompoundTools.CompoundFilter.makeCompoundFilter(name = 'CompoundFilter')
+#f.Base = App.ActiveDocument.Shape004
+#f.FilterType = 'window-volume'
+#f.Proxy.execute(f)
+#f.purgeTouched()
 
 # make a line from seem of sphere to heli
-line = Draft.makeWire([heli.Shape.Vertex27.Point, App.ActiveDocument.CompoundFilter.Shape.Vertex1.Point])
+#line = Draft.makeWire([heli.Shape.Vertex27.Point, App.ActiveDocument.CompoundFilter.Shape.Vertex1.Point])
 
 # split heli and line
-import BOPTools.SplitFeatures
-split = BOPTools.SplitFeatures.makeBooleanFragments(name= 'BooleanFragments')
-split.Objects = [App.ActiveDocument.Shape004, App.ActiveDocument.Line]
-split.Mode = 'Standard'
-split.Proxy.execute(split)
-split.purgeTouched()
+#import BOPTools.SplitFeatures
+#split = BOPTools.SplitFeatures.makeBooleanFragments(name= 'BooleanFragments')
+#split.Objects = [App.ActiveDocument.Shape004, App.ActiveDocument.Line]
+#split.Mode = 'Standard'
+#split.Proxy.execute(split)
+#split.purgeTouched()
 
 #export to step
 #split.Shape.exportStep("robin.step")
 
 import ObjectsFem
 mesh = ObjectsFem.makeMeshGmsh(FreeCAD.ActiveDocument, 'FEMMeshGmsh')
-#mesh.CharacteristicLengthMin = 0.5
-#mesh.CharacteristicLengthMax = 0.5
 mesh.ElementDimension = 3
-FreeCAD.ActiveDocument.ActiveObject.Part = FreeCAD.ActiveDocument.Shape004
+FreeCAD.ActiveDocument.ActiveObject.Part = FreeCAD.ActiveDocument.Shape
 
 mr_fus = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.05, 'fus')
 mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.5, 'outer')
-#mr_fus.CharacteristicLength = 0.7
 
 mg_fus = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_fus')
 mg_outer= ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_outer')
 mg_vol = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_vol')
 
 temp = []
-for i in range(2,len(App.ActiveDocument.Shape004.Shape.Faces)):
-    temp.append((App.ActiveDocument.Shape004, 'Face' + str(i)))
+for i in range(2,len(App.ActiveDocument.Shape.Shape.Faces)):
+    temp.append((App.ActiveDocument.Shape, 'Face' + str(i)))
 
 mr_fus.References = temp
 mg_fus.References = temp
-mr_outer.References = (App.ActiveDocument.Shape004, 'Face1')
-mg_outer.References = (App.ActiveDocument.Shape004, 'Face1')
-mg_vol.References = (App.ActiveDocument.Shape004, 'Solid1')
+mr_outer.References = (App.ActiveDocument.Shape, 'Face1')
+mg_outer.References = (App.ActiveDocument.Shape, 'Face1')
+mg_vol.References = (App.ActiveDocument.Shape, 'Solid1')
 
 import femmesh.gmshtools as gmshtools
 gmsh_mesh = gmshtools.GmshTools(mesh)
@@ -233,32 +237,7 @@ gmsh_mesh.create_mesh()
 
 #print(str(FreeCAD.ActiveDocument.FEMMeshGmsh.FemMesh))
 
-import shutil
-shutil.copyfile('/tmp/shape2mesh.geo', '/home/orhan/ROBIN/shape2mesh.geo')
+import modifygeo
+modifygeo.modifygeo("fuspyl")
 
-with open('shape2mesh.geo', 'r') as file :
-  filedata = file.readlines()
-
-filedata = [line for line in filedata if not 'SaveAll' in line]
-
-for i, line in enumerate(filedata):
-    if 'Mesh.Format' in line:
-        filedata[i] = 'Mesh.Format = 1;\n'
-    if 'Save' in line:
-        filedata[i] =  "Save \"robin.msh\";"
-    if 'mg_fus' in line:
-        filedata[i] = filedata[i].replace("\"mg_fus\"", "1")
-    if 'mg_outer' in line:
-        filedata[i] = filedata[i].replace("\"mg_outer\"", "2")
-    if 'mg_vol' in line:
-        filedata[i] = filedata[i].replace("\"mg_vol\"", "1")
-
-for i, line in enumerate(filedata):
-    if 'Save' in line:
-        filedata.insert(i-1, 'Mesh.MshFileVersion = 2.2;\n');
-        break
-
-# Write the file out again
-with open('shape2mesh.geo', 'w') as file:
-    for line in filedata:
-        file.write(line)
+doc.removeObject("Shape")
