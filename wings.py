@@ -15,9 +15,8 @@ def makecylinder(rad, pos, ext_dir):
     cylinder = Part.makeCylinder(rad, cyl_length, pos, ext_dir)
     return cylinder
 
-chord = 1
+chord = 2.61
 thick = 12 * chord / 100;
-scale = 0.2
 
 def y(x):
     C1 = 0.2969
@@ -33,12 +32,12 @@ nx = 10;
 x = numpy.linspace(0, chord, nx)
 
 wing_z_start = 0
-wing_z_end = 1.5
+wing_z_end = 33.88
 points = []
 for i in range(len(x)):
-    points.append(FreeCAD.Vector(scale*x[i], scale*y(x[i]), wing_z_start))
+    points.append(FreeCAD.Vector(x[i], y(x[i]), wing_z_start))
 for i in reversed(range(len(x)-1)):
-    points.append(FreeCAD.Vector(scale*x[i], -scale*y(x[i]), wing_z_start))
+    points.append(FreeCAD.Vector(x[i], -y(x[i]), wing_z_start))
 
 
 def makewing(points):
@@ -57,23 +56,27 @@ rot = FreeCAD.Rotation(FreeCAD.Vector(1,0,0), 90)
 centre = FreeCAD.Vector(0.5, 0, 0.05)
 pos = FreeCAD.Vector(0, 0, 0)
 
-wing_z_height = 0.3
-cyl_wing_diff = 1
+fuslen = 78.70
+halffuswidthy = 0.125 * fuslen
+halffuswidthz = 0.197 * fuslen
+wing_z_height = 0.13 * fuslen
+cyl_wing_diff = wing_z_end / 5
 cyl_length = wing_z_end + cyl_wing_diff
-pyl_x = 0.7
-off_front_wing = 0.2
-cyl_rad = 0.5
+pyl_x = (0.4 + 1.018) * fuslen / 4
+off_front_wing = halffuswidthy / 2
+off_side_wing = halffuswidthy / 2
+cyl_rad = chord * 3
 
 cylinders = []
 
 # reposition wings[0]
 mat = wings[0].Placement.toMatrix()
 mat.rotateX(math.pi/2)
-mat.move(FreeCAD.Vector(pyl_x-scale*chord/2,wing_z_end+0.2,wing_z_height))
+mat.move(FreeCAD.Vector(pyl_x-chord/2, wing_z_end+off_side_wing, wing_z_height))
 wings[0].Placement = FreeCAD.Placement(mat)
 
 #Part.show(wings[0])
-cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14+scale*chord/2, mat.A24+cyl_wing_diff/2, wing_z_height), FreeCAD.Vector(0,-1,0))
+cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14+chord/2, mat.A24+cyl_wing_diff/2, wing_z_height), FreeCAD.Vector(0,-1,0))
 cylinders.append(cylinder)
 #Part.show(cylinder)
 
@@ -81,11 +84,11 @@ cylinders.append(cylinder)
 mat = wings[1].Placement.toMatrix()
 mat.rotateZ(math.pi/2)
 mat.rotateY(-math.pi/2)
-mat.move(FreeCAD.Vector(pyl_x-off_front_wing,-0.1,wing_z_height))
+mat.move(FreeCAD.Vector(pyl_x-off_front_wing,-chord/2,wing_z_height))
 wings[1].Placement = FreeCAD.Placement(mat)
 
 #Part.show(wings[1])
-cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14+cyl_wing_diff/2, mat.A24+scale*chord/2, wing_z_height), FreeCAD.Vector(-1,0,0))
+cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14+cyl_wing_diff/2, mat.A24+chord/2, wing_z_height), FreeCAD.Vector(-1,0,0))
 cylinders.append(cylinder)
 #Part.show(cylinder)
 
@@ -94,12 +97,12 @@ wings[2] = wings[0].copy()
 mat = wings[0].Placement.toMatrix()
 mat.rotateY(math.pi)
 mat.A24 = -(mat.A24 - wing_z_end)
-mat.A14 = wings[0].Placement.toMatrix().A14 + scale * chord
+mat.A14 = wings[0].Placement.toMatrix().A14 + chord
 mat.A34 = wings[0].Placement.toMatrix().A34
 wings[2].Placement = FreeCAD.Placement(mat)
 
 #Part.show(wings[2])
-cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14-scale*chord/2, mat.A24-cyl_wing_diff/2-wing_z_end, wing_z_height), FreeCAD.Vector(0,1,0))
+cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14-chord/2, mat.A24-cyl_wing_diff/2-wing_z_end, wing_z_height), FreeCAD.Vector(0,1,0))
 cylinders.append(cylinder)
 #Part.show(cylinder)
 
@@ -107,13 +110,13 @@ cylinders.append(cylinder)
 wings[3] = wings[1].copy()
 mat = wings[1].Placement.toMatrix()
 mat.rotateX(math.pi)
-mat.A24 = wings[1].Placement.toMatrix().A24 + scale * chord
+mat.A24 = wings[1].Placement.toMatrix().A24 + chord
 mat.A34 = wings[1].Placement.toMatrix().A34
 mat.A14 = pyl_x + wing_z_end + off_front_wing
 wings[3].Placement = FreeCAD.Placement(mat)
 
 #Part.show(wings[3])
-cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14-cyl_wing_diff/2-wing_z_end, mat.A24-scale*chord/2, wing_z_height), FreeCAD.Vector(1,0,0))
+cylinder = makecylinder(cyl_rad, FreeCAD.Vector(mat.A14-cyl_wing_diff/2-wing_z_end, mat.A24-chord/2, wing_z_height), FreeCAD.Vector(1,0,0))
 cylinders.append(cylinder)
 #Part.show(cylinder)
 
@@ -122,10 +125,6 @@ wings[0].exportStep("wing0.step")
 wings[1].exportStep("wing1.step")
 wings[2].exportStep("wing2.step")
 wings[3].exportStep("wing3.step")
-
-
-
-
 
 
 def makerest(cylinder, wing, tag):
@@ -138,8 +137,8 @@ def makerest(cylinder, wing, tag):
     mesh.ElementDimension = 3
     FreeCAD.ActiveDocument.ActiveObject.Part = FreeCAD.ActiveDocument.Shape
 
-    mr_wing = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.05, 'mr_wing')
-    mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.05, 'outer')
+    mr_wing = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 1.0, 'mr_wing')
+    mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 5.0, 'mr_outer')
 
     mg_wing = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_wing')
     mg_outer= ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_outer')
@@ -168,6 +167,11 @@ def makerest(cylinder, wing, tag):
 
     doc.removeObject("Shape")
     doc.removeObject("FEMMeshGmsh")
+    doc.removeObject("mr_wing")
+    doc.removeObject("mr_outer")
+    doc.removeObject("mg_wing")
+    doc.removeObject("mg_outer")
+    doc.removeObject("mg_vol")
     doc.recompute()
 
 
@@ -201,4 +205,3 @@ modifygeo.factor_core("wing3")
 modifygeo.factor_interior("wing3")
 modifygeo.factor_dirichlet("wing3")
 modifygeo.factor_wall("wing3")
-

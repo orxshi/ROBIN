@@ -138,16 +138,23 @@ def r(H, W, N, phi):
     return (b / a) ** (1./N)
 
 
+L = 78.70 / 2 # so that length of body is 78.70
+
 xm = numpy.linspace(0.00001, 2, 10) # 20
 xp = numpy.linspace(0.40001, 1.018, 10) # 20
 p = numpy.linspace(0, 2*math.pi, 10) # 30
+
+#yy = []
+#zz = []
 
 def makepart(part, x):
     polygons = []
     for i in range(len(x)-1):
         points = []
         for j in range(len(p)-1):
-            points.append(FreeCAD.Vector(x[i], yl(x[i], p[j], part), zl(x[i], p[j], part)))
+            points.append(FreeCAD.Vector(x[i] * L, yl(x[i], p[j], part) * L, zl(x[i], p[j], part) * L))
+            #yy.append(yl(x[i], p[j], part))
+            #zz.append(zl(x[i], p[j], part))
         points.append(points[0])
         polygons.append(Part.makePolygon(points))
 
@@ -158,8 +165,13 @@ def makepart(part, x):
     #Part.show(shell)
     return shell
 
+
+
 fuselage = makepart(Fuselage, xm)
 pylon = makepart(Pylon, xp)
+
+#print(max(yy))
+#print(max(zz))
 
 # make compound
 heli = Part.makeCompound([fuselage, pylon])
@@ -170,24 +182,20 @@ s = Part.Solid(heli)
 s.exportStep("fuspyl.step")
 
 # make a sphere
-sphere = Part.makeSphere(10,FreeCAD.Vector(1,0,0))
-#Part.show(sphere)
+sphere = Part.makeSphere(L*5,FreeCAD.Vector(1,0,0))
 
 # cut heli from sphere
 cut = sphere.cut(s)
 Part.show(cut)
 #cut.exportStep("cut_fuspyl.step")
 
-#export to step
-#split.Shape.exportStep("robin.step")
-
 import ObjectsFem
 mesh = ObjectsFem.makeMeshGmsh(FreeCAD.ActiveDocument, 'FEMMeshGmsh')
 mesh.ElementDimension = 3
 FreeCAD.ActiveDocument.ActiveObject.Part = FreeCAD.ActiveDocument.Shape
 
-mr_fus = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.05, 'fus') # 0.05
-mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 1.0, 'outer') # 0.5
+mr_fus = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 5.0, 'fus')
+mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 20.0, 'outer')
 
 mg_fus = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_fus')
 mg_outer= ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_outer')
@@ -195,7 +203,6 @@ mg_vol = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument
 
 temp = []
 for i in range(2,len(App.ActiveDocument.Shape.Shape.Faces)):
-#for i in range(1,len(App.ActiveDocument.Shape.Shape.Faces)):
     temp.append((App.ActiveDocument.Shape, 'Face' + str(i)))
 
 mr_fus.References = temp
