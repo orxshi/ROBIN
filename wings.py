@@ -176,12 +176,29 @@ import modifygeo
 
 makerest(cylinders[0], wings[0], 0)
 modifygeo.modifygeo("wing0")
+modifygeo.factor_core("wing0")
+modifygeo.factor_interior("wing0")
+modifygeo.factor_dirichlet("wing0")
+modifygeo.factor_wall("wing0")
 
 makerest(cylinders[1], wings[1], 1)
 modifygeo.modifygeo("wing1")
+modifygeo.factor_core("wing1")
+modifygeo.factor_interior("wing1")
+modifygeo.factor_dirichlet("wing1")
+modifygeo.factor_wall("wing1")
 
 makerest(cylinders[2], wings[2], 2)
 modifygeo.modifygeo("wing2")
+modifygeo.factor_core("wing2")
+modifygeo.factor_interior("wing2")
+modifygeo.factor_dirichlet("wing2")
+modifygeo.factor_wall("wing2")
 
 makerest(cylinders[3], wings[3], 3)
 modifygeo.modifygeo("wing3")
+modifygeo.factor_core("wing3")
+modifygeo.factor_interior("wing3")
+modifygeo.factor_dirichlet("wing3")
+modifygeo.factor_wall("wing3")
+

@@ -138,9 +138,9 @@ def r(H, W, N, phi):
     return (b / a) ** (1./N)
 
 
-xm = numpy.linspace(0.00001, 2, 10)
-xp = numpy.linspace(0.40001, 1.018, 10)
-p = numpy.linspace(0, 2*math.pi, 20)
+xm = numpy.linspace(0.00001, 2, 10) # 20
+xp = numpy.linspace(0.40001, 1.018, 10) # 20
+p = numpy.linspace(0, 2*math.pi, 10) # 30
 
 def makepart(part, x):
     polygons = []
@@ -155,28 +155,19 @@ def makepart(part, x):
     cap1 = Part.Face(polygons[0])
     cap2 = Part.Face(polygons[-1])
     shell = Part.Shell(loft.Faces+[cap1, cap2])
-    Part.show(shell)
+    #Part.show(shell)
     return shell
 
 fuselage = makepart(Fuselage, xm)
 pylon = makepart(Pylon, xp)
 
-# join-connect fuselage and pylon
-# let's call the joined object 'heli'
-heli = BOPTools.JoinFeatures.makeConnect(name = 'Connected')
-heli.Objects = [App.ActiveDocument.Shape, App.ActiveDocument.Shape001]
-heli.Proxy.execute(heli)
-heli.purgeTouched()
+# make compound
+heli = Part.makeCompound([fuselage, pylon])
 
 # make heli a solid
-s = Part.Solid(Part.Shell(heli.Shape.Faces))
-#Part.show(s)
+s = Part.Solid(heli)
+#Part.show(heli)
 s.exportStep("fuspyl.step")
-
-
-doc.removeObject("Shape")
-doc.removeObject("Shape001")
-doc.removeObject("Connected")
 
 # make a sphere
 sphere = Part.makeSphere(10,FreeCAD.Vector(1,0,0))
@@ -185,26 +176,7 @@ sphere = Part.makeSphere(10,FreeCAD.Vector(1,0,0))
 # cut heli from sphere
 cut = sphere.cut(s)
 Part.show(cut)
-cut.exportStep("cut_fuspyl.step")
-
-# extract seem of sphere
-#import CompoundTools.CompoundFilter
-#f = CompoundTools.CompoundFilter.makeCompoundFilter(name = 'CompoundFilter')
-#f.Base = App.ActiveDocument.Shape004
-#f.FilterType = 'window-volume'
-#f.Proxy.execute(f)
-#f.purgeTouched()
-
-# make a line from seem of sphere to heli
-#line = Draft.makeWire([heli.Shape.Vertex27.Point, App.ActiveDocument.CompoundFilter.Shape.Vertex1.Point])
-
-# split heli and line
-#import BOPTools.SplitFeatures
-#split = BOPTools.SplitFeatures.makeBooleanFragments(name= 'BooleanFragments')
-#split.Objects = [App.ActiveDocument.Shape004, App.ActiveDocument.Line]
-#split.Mode = 'Standard'
-#split.Proxy.execute(split)
-#split.purgeTouched()
+#cut.exportStep("cut_fuspyl.step")
 
 #export to step
 #split.Shape.exportStep("robin.step")
@@ -214,8 +186,8 @@ mesh = ObjectsFem.makeMeshGmsh(FreeCAD.ActiveDocument, 'FEMMeshGmsh')
 mesh.ElementDimension = 3
 FreeCAD.ActiveDocument.ActiveObject.Part = FreeCAD.ActiveDocument.Shape
 
-mr_fus = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.05, 'fus')
-mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.5, 'outer')
+mr_fus = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.05, 'fus') # 0.05
+mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 1.0, 'outer') # 0.5
 
 mg_fus = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_fus')
 mg_outer= ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_outer')
@@ -223,6 +195,7 @@ mg_vol = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument
 
 temp = []
 for i in range(2,len(App.ActiveDocument.Shape.Shape.Faces)):
+#for i in range(1,len(App.ActiveDocument.Shape.Shape.Faces)):
     temp.append((App.ActiveDocument.Shape, 'Face' + str(i)))
 
 mr_fus.References = temp
@@ -239,5 +212,9 @@ gmsh_mesh.create_mesh()
 
 import modifygeo
 modifygeo.modifygeo("fuspyl")
+modifygeo.factor_core("fuspyl")
+modifygeo.factor_interior("fuspyl")
+modifygeo.factor_dirichlet("fuspyl")
+modifygeo.factor_wall("fuspyl")
 
-doc.removeObject("Shape")
+#doc.removeObject("Shape")
