@@ -7,7 +7,8 @@ sys.path.append('/usr/lib/freecad/lib/')
 import FreeCAD
 import Draft
 import Part
-import BOPTools.JoinFeatures
+#import BOPTools.JoinFeatures
+import BOPTools.JoinAPI
 
 doc = FreeCAD.newDocument('newdoc')
 
@@ -174,11 +175,14 @@ pylon = makepart(Pylon, xp)
 #print(max(zz))
 
 # make compound
-heli = Part.makeCompound([fuselage, pylon])
+#heli = Part.makeCompound([fuselage, pylon])
+#heli = fuselage.fuse(pylon)
+#heli = heli.removeSplitter()
+heli = BOPTools.JoinAPI.connect([fuselage, pylon])
+#Part.show(heli)
 
 # make heli a solid
 s = Part.Solid(heli)
-#Part.show(heli)
 s.exportStep("fuspyl.step")
 
 # make a sphere
@@ -187,7 +191,6 @@ sphere = Part.makeSphere(L*5,FreeCAD.Vector(1,0,0))
 # cut heli from sphere
 cut = sphere.cut(s)
 Part.show(cut)
-#cut.exportStep("cut_fuspyl.step")
 
 import ObjectsFem
 mesh = ObjectsFem.makeMeshGmsh(FreeCAD.ActiveDocument, 'FEMMeshGmsh')
@@ -214,6 +217,7 @@ mg_vol.References = (App.ActiveDocument.Shape, 'Solid1')
 import femmesh.gmshtools as gmshtools
 gmsh_mesh = gmshtools.GmshTools(mesh)
 gmsh_mesh.create_mesh()
+
 
 #print(str(FreeCAD.ActiveDocument.FEMMeshGmsh.FemMesh))
 
