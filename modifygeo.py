@@ -2,7 +2,7 @@ import shutil
 
 def modifygeo(name):
     shutil.copyfile('/tmp/shape2mesh.geo', '/home/orhan/ROBIN/' + name + '.geo')
-    shutil.copyfile('/tmp/Shape_Geometry.brep', '/home/orhan/ROBIN/' + name + '.brep')
+    shutil.copyfile('/tmp/Cut_Geometry.brep', '/home/orhan/ROBIN/' + name + '.brep')
 
     with open(name + '.geo', 'r') as file :
       filedata = file.readlines()
@@ -24,13 +24,24 @@ def modifygeo(name):
         if 'mg_fus' in line:
             filedata[i] = filedata[i].replace("\"mg_fus\"", "1")
         if 'mg_wing' in line:
+            import re
+            regex = r"\{(.*?)\}"
+            matches = re.findall(regex, line, re.MULTILINE | re.DOTALL)
             filedata[i] = filedata[i].replace("\"mg_wing\"", "1")
         if 'mg_outer' in line:
             filedata[i] = filedata[i].replace("\"mg_outer\"", "2")
         if 'mg_vol' in line:
             filedata[i] = filedata[i].replace("\"mg_vol\"", "1")
 
-    filedata.append('Mesh.MshFileVersion = 2.2;\n')
+    filedata.append('Mesh.MshFileVersion = 2.2;\n\n')
+
+    filedata.append('lc = 100;\n')
+    filedata.append('Field[1] = Attractor;\n')
+    filedata.append('Field[1].FacesList = {' + matches[0] + '};\n')
+    filedata.append('Field[1].NNodesByEdge = {100};\n')
+    filedata.append('Field[2] = MathEval;\n')
+    filedata.append('Field[2].F = Sprintf("F1/2 + %g", lc / 1000);\n')
+    filedata.append('Background Field = 2;\n')
 
     # Write the file out again
     with open(name + '.geo', 'w') as file:
@@ -96,3 +107,20 @@ def factor_wall(name):
         for line in filedata:
             file.write(line)
 
+
+def factor_interog(name):
+    newname = name + '_interog.geo'
+    shutil.copyfile(name + '.geo', newname)
+
+    with open(newname, 'r') as file :
+        filedata = file.readlines()
+
+    filedata = [line for line in filedata if 'Physical Surface(2)' in line]
+    for i, line in enumerate(filedata):
+        if 'Physical Surface(2)' in line:
+            filedata[i] = filedata[i].replace("Physical Surface(2)", "Physical Surface(11)")
+
+    with open(newname, 'w+') as file :
+        file.write("Include \"" + name + "_core.geo\";\n")
+        for line in filedata:
+            file.write(line)

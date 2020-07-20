@@ -137,8 +137,8 @@ def makerest(cylinder, wing, tag):
     mesh.ElementDimension = 3
     FreeCAD.ActiveDocument.ActiveObject.Part = FreeCAD.ActiveDocument.Shape
 
-    mr_wing = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.5, 'mr_wing')
-    mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 1.0, 'mr_outer')
+    #mr_wing = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 0.5, 'mr_wing')
+    #mr_outer = ObjectsFem.makeMeshRegion(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, 1.0, 'mr_outer')
 
     mg_wing = ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_wing')
     mg_outer= ObjectsFem.makeMeshGroup(FreeCAD.ActiveDocument, FreeCAD.ActiveDocument.FEMMeshGmsh, False, 'mg_outer')
@@ -148,14 +148,14 @@ def makerest(cylinder, wing, tag):
     for i in range(4,len(App.ActiveDocument.Shape.Shape.Faces)):
         temp.append((App.ActiveDocument.Shape, 'Face' + str(i)))
 
-    mr_wing.References = temp
+    #mr_wing.References = temp
     mg_wing.References = temp
 
     temp = []
     for i in range(1,4):
         temp.append((App.ActiveDocument.Shape, 'Face' + str(i)))
 
-    mr_outer.References = temp
+    #mr_outer.References = temp
     mg_outer.References = temp
     mg_vol.References = (App.ActiveDocument.Shape, 'Solid1')
 
@@ -167,8 +167,8 @@ def makerest(cylinder, wing, tag):
 
     doc.removeObject("Shape")
     doc.removeObject("FEMMeshGmsh")
-    doc.removeObject("mr_wing")
-    doc.removeObject("mr_outer")
+    #doc.removeObject("mr_wing")
+    #doc.removeObject("mr_outer")
     doc.removeObject("mg_wing")
     doc.removeObject("mg_outer")
     doc.removeObject("mg_vol")
