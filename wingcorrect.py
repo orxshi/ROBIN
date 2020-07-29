@@ -9,6 +9,7 @@ import FreeCAD
 import Draft
 import Part
 import BOPTools.JoinFeatures
+import ObjectsFem
 
 doc = App.newDocument('newdoc')
 
@@ -37,11 +38,8 @@ wing_z_end = 33.88
 points = []
 for i in range(len(x)):
     points.append(App.Vector(x[i], y(x[i]), wing_z_start))
-    #print (x[i], y(x[i]))
-#print ('----------')
 for i in reversed(range(1, len(x)-1)):
     points.append(App.Vector(x[i], -y(x[i]), wing_z_start))
-    #print (x[i], -y(x[i]))
 points.append(points[0])
 
 
@@ -55,14 +53,15 @@ def makewing(points):
 
 
 # make 4 wings
-wings = [makewing(points) for _ in range(1)]
-Part.show(wings[0])
+wings = [makewing(points) for _ in range(4)]
+#Part.show(wings[0])
 
 #
 rot = App.Rotation(App.Vector(1,0,0), 90)
 centre = App.Vector(0.5, 0, 0.05)
 pos = App.Vector(0, 0, 0)
 
+boxlen = 500
 fuslen = 78.70
 halffuswidthy = 0.125 * fuslen
 halffuswidthz = 0.197 * fuslen
@@ -81,9 +80,79 @@ mat = wings[0].Placement.toMatrix()
 mat.rotateX(math.pi/2)
 mat.move(App.Vector(pyl_x-chord/2, wing_z_end+off_side_wing, wing_z_height))
 wings[0].Placement = App.Placement(mat)
-
+mattemp = wings[0].Placement.toMatrix()
+#print('cnt(0):', pyl_x)
+#print('cnt(1):', 0)
+#print('cnt(2):', wing_z_height)
 cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+chord/2, mat.A24+cyl_wing_diff/2, wing_z_height), App.Vector(0,-1,0))
+Part.show(cylinder)
 cylinders.append(cylinder)
+
+# reposition wings[1]
+mat = wings[1].Placement.toMatrix()
+mat.rotateZ(math.pi/2)
+mat.rotateY(-math.pi/2)
+mat.move(App.Vector(pyl_x-off_front_wing,-chord/2,wing_z_height))
+wings[1].Placement = App.Placement(mat)
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+cyl_wing_diff/2, mat.A24+chord/2, wing_z_height), App.Vector(-1,0,0))
+Part.show(cylinder)
+cylinders.append(cylinder)
+
+# reposition wings[2]
+wings[2] = wings[0].copy()
+mat = wings[0].Placement.toMatrix()
+mat.rotateY(math.pi)
+mat.A24 = -(mat.A24 - wing_z_end)
+mat.A14 = wings[0].Placement.toMatrix().A14 + chord
+mat.A34 = wings[0].Placement.toMatrix().A34
+wings[2].Placement = App.Placement(mat)
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24-cyl_wing_diff/2-wing_z_end, wing_z_height), App.Vector(0,1,0))
+Part.show(cylinder)
+cylinders.append(cylinder)
+
+# reposition wings[3]
+wings[3] = wings[1].copy()
+mat = wings[1].Placement.toMatrix()
+mat.rotateX(math.pi)
+mat.A24 = wings[1].Placement.toMatrix().A24 + chord
+mat.A34 = wings[1].Placement.toMatrix().A34
+mat.A14 = pyl_x + wing_z_end + off_front_wing
+wings[3].Placement = App.Placement(mat)
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-cyl_wing_diff/2-wing_z_end, mat.A24-chord/2, wing_z_height), App.Vector(1,0,0))
+Part.show(cylinder)
+cylinders.append(cylinder)
+
+box = Part.makeBox(boxlen, boxlen, boxlen, App.Vector(pyl_x-boxlen/2, 0-boxlen/2, wing_z_height-boxlen/2))
+Part.show(box)
+
+
+def meshbox():
+    obj = doc.addObject("Part::Feature","Box")
+    obj.Shape = box
+
+    mesh = ObjectsFem.makeMeshGmsh(doc, 'FEMMeshGmsh')
+    mesh.Part = obj
+
+    mg_outer = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_outer')
+    mg_vol = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_vol')
+
+    temp = []
+    for i in range(1,7):
+        temp.append((obj, 'Face' + str(i)))
+
+    mg_outer.References = temp
+    mg_vol.References = (obj, 'Solid1')
+
+    import femmesh.gmshtools as gmshtools
+    gmsh_mesh = gmshtools.GmshTools(mesh)
+    gmsh_mesh.create_mesh()
+
+    doc.removeObject("Box")
+    doc.removeObject("FEMMeshGmsh")
+    doc.removeObject("mg_outer")
+    doc.removeObject("mg_vol")
+    doc.recompute()
+
 
 def makerest(cylinder, wing, tag):
     cut = cylinder.cut(wing)
@@ -92,21 +161,18 @@ def makerest(cylinder, wing, tag):
     if not cut_object:
         cut_object.ViewObject.Transparency = 50
 
-    import ObjectsFem
     mesh = ObjectsFem.makeMeshGmsh(doc, 'FEMMeshGmsh')
     mesh.Part = cut_object
 
     mg_wing = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_wing')
-    mg_outer= ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_outer')
+    mg_outer = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_outer')
     mg_vol = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_vol')
 
     temp = []
-    #print('nface: ', len(cut_object.Shape.Faces))
     for i in range(4,len(cut_object.Shape.Faces)+1):
         temp.append((cut_object, 'Face' + str(i)))
 
     mg_wing.References = temp
-    print(len(temp))
 
     temp = []
     for i in range(1,4):
@@ -119,12 +185,28 @@ def makerest(cylinder, wing, tag):
     gmsh_mesh = gmshtools.GmshTools(mesh)
     gmsh_mesh.create_mesh()
 
+    doc.removeObject("Cut")
+    doc.removeObject("FEMMeshGmsh")
+    doc.removeObject("mg_wing")
+    doc.removeObject("mg_outer")
+    doc.removeObject("mg_vol")
+    doc.recompute()
 
 
 
-makerest(cylinders[0], wings[0], 0)
-modifygeo.modifygeo("NACA0012")
-modifygeo.factor_core("NACA0012")
-modifygeo.factor_interior("NACA0012")
-modifygeo.factor_interog("NACA0012")
-modifygeo.factor_wall("NACA0012")
+for i in range(4):
+
+    fn = "wing" + str(i)
+
+    makerest(cylinders[i], wings[i], i)
+    modifygeo.modifygeo(fn, 'Cut', pyl_x, 0, wing_z_height)
+    modifygeo.factor_core(fn)
+    modifygeo.factor_interior(fn)
+    modifygeo.factor_interog(fn)
+    modifygeo.factor_wall(fn)
+
+meshbox()
+modifygeo.modifygeo("box", 'Box', pyl_x, 0, wing_z_height)
+modifygeo.factor_core("box")
+modifygeo.factor_interior("box")
+modifygeo.factor_farfield("box")
