@@ -40,11 +40,11 @@ def modifygeo(name, shapename, cx, cy, cz):
 
     filedata.append('Mesh.MshFileVersion = 2.2;\n\n')
 
-    filedata.append('lc = 1000;\n')
-    filedata.append('Field[1] = Attractor;\n')
+    filedata.append('lc = 10;\n')
+    filedata.append('Field[1] = Distance;\n')
     if shapename == 'Cut':
         filedata.append('Field[1].FacesList = {' + matches[0] + '};\n')
-        filedata.append('Field[1].NNodesByEdge = {100};\n')
+        filedata.append('Field[1].NNodesByEdge = 100;\n')
     elif shapename == 'Box':
         filedata.append('Point(111)={' + str(cx) + ', ' + str(cy) + ', ' + str(cz) + '};\n')
         filedata.append('Field[1].NodesList = {111};\n')

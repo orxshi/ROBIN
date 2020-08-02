@@ -17,8 +17,10 @@ def makecylinder(rad, pos, ext_dir):
     cylinder = Part.makeCylinder(rad, cyl_length, pos, ext_dir)
     return cylinder
 
-chord = 2.61
-thick = 12 * chord / 100;
+chord = 0.066294
+#thick = 12 * chord / 100;
+thick = 12 / 100;
+twist = 8;
 
 def y(x):
     C1 = 0.2969
@@ -34,7 +36,7 @@ nx = 10;
 x = numpy.linspace(0, chord, nx)
 
 wing_z_start = 0
-wing_z_end = 33.88
+wing_z_end = 0.860552
 points = []
 for i in range(len(x)):
     points.append(App.Vector(x[i], y(x[i]), wing_z_start))
@@ -46,32 +48,40 @@ points.append(points[0])
 def makewing(points):
     polygon = Part.makePolygon(points)
     #Part.show(polygon)
-    face = Part.Face(polygon)
-    #Part.show(face)
-    wing = face.extrude(App.Vector(0,0,wing_z_end))
+
+    polygon2 = Part.makePolygon(points)
+    mat = polygon2.Placement.toMatrix()
+    mat.rotateZ(-twist * math.pi / 180)
+    mat.move(App.Vector(0,0,wing_z_end))
+    polygon2.Placement = App.Placement(mat)
+
+    #face = Part.Face(polygon)
+    #wing = face.extrude(App.Vector(0,0,wing_z_end))
+    wing = Part.makeLoft([polygon, polygon2], True)
     return wing
 
 
 # make 4 wings
 wings = [makewing(points) for _ in range(4)]
-#Part.show(wings[0])
 
 #
 rot = App.Rotation(App.Vector(1,0,0), 90)
 centre = App.Vector(0.5, 0, 0.05)
 pos = App.Vector(0, 0, 0)
 
-boxlen = 500
-fuslen = 78.70
+boxlen = 100
+fuslen = 1.99898
 halffuswidthy = 0.125 * fuslen
 halffuswidthz = 0.197 * fuslen
 wing_z_height = 0.13 * fuslen
 cyl_wing_diff = wing_z_end / 5
-cyl_length = wing_z_end + cyl_wing_diff
+#cyl_length = wing_z_end + cyl_wing_diff
+cyl_length = chord * 100
 pyl_x = (0.4 + 1.018) * fuslen / 4
 off_front_wing = halffuswidthy / 2
 off_side_wing = halffuswidthy / 2
-cyl_rad = chord * 3
+#cyl_rad = chord * 3
+cyl_rad = chord *100
 
 cylinders = []
 
@@ -84,9 +94,11 @@ mattemp = wings[0].Placement.toMatrix()
 #print('cnt(0):', pyl_x)
 #print('cnt(1):', 0)
 #print('cnt(2):', wing_z_height)
-cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+chord/2, mat.A24+cyl_wing_diff/2, wing_z_height), App.Vector(0,-1,0))
-Part.show(cylinder)
+#cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+chord/2, mat.A24+cyl_wing_diff/2, wing_z_height), App.Vector(0,-1,0))
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+chord/2, mat.A24 + cyl_length/2 - wing_z_end/2, wing_z_height), App.Vector(0,-1,0))
+#Part.show(cylinder)
 cylinders.append(cylinder)
+#Part.show(wings[0])
 
 # reposition wings[1]
 mat = wings[1].Placement.toMatrix()
@@ -94,8 +106,9 @@ mat.rotateZ(math.pi/2)
 mat.rotateY(-math.pi/2)
 mat.move(App.Vector(pyl_x-off_front_wing,-chord/2,wing_z_height))
 wings[1].Placement = App.Placement(mat)
-cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+cyl_wing_diff/2, mat.A24+chord/2, wing_z_height), App.Vector(-1,0,0))
-Part.show(cylinder)
+#cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+cyl_wing_diff/2, mat.A24+chord/2, wing_z_height), App.Vector(-1,0,0))
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+cyl_length/2 - wing_z_end/2, mat.A24+chord/2, wing_z_height), App.Vector(-1,0,0))
+#Part.show(cylinder)
 cylinders.append(cylinder)
 
 # reposition wings[2]
@@ -106,8 +119,9 @@ mat.A24 = -(mat.A24 - wing_z_end)
 mat.A14 = wings[0].Placement.toMatrix().A14 + chord
 mat.A34 = wings[0].Placement.toMatrix().A34
 wings[2].Placement = App.Placement(mat)
-cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24-cyl_wing_diff/2-wing_z_end, wing_z_height), App.Vector(0,1,0))
-Part.show(cylinder)
+#cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24-cyl_wing_diff/2-wing_z_end, wing_z_height), App.Vector(0,1,0))
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24 - cyl_length/2 - wing_z_end/2, wing_z_height), App.Vector(0,1,0))
+#Part.show(cylinder)
 cylinders.append(cylinder)
 
 # reposition wings[3]
@@ -118,12 +132,23 @@ mat.A24 = wings[1].Placement.toMatrix().A24 + chord
 mat.A34 = wings[1].Placement.toMatrix().A34
 mat.A14 = pyl_x + wing_z_end + off_front_wing
 wings[3].Placement = App.Placement(mat)
-cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-cyl_wing_diff/2-wing_z_end, mat.A24-chord/2, wing_z_height), App.Vector(1,0,0))
-Part.show(cylinder)
+#cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-cyl_wing_diff/2-wing_z_end, mat.A24-chord/2, wing_z_height), App.Vector(1,0,0))
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-cyl_length/2-wing_z_end/2, mat.A24-chord/2, wing_z_height), App.Vector(1,0,0))
+#Part.show(cylinder)
 cylinders.append(cylinder)
 
+#Part.show(wings[0])
+#Part.show(wings[1])
+#Part.show(wings[2])
+#Part.show(wings[3])
+
+#Part.show(cylinders[0])
+#Part.show(cylinders[1])
+#Part.show(cylinders[2])
+#Part.show(cylinders[3])
+
 box = Part.makeBox(boxlen, boxlen, boxlen, App.Vector(pyl_x-boxlen/2, 0-boxlen/2, wing_z_height-boxlen/2))
-Part.show(box)
+#Part.show(box)
 
 
 def meshbox():
@@ -193,7 +218,6 @@ def makerest(cylinder, wing, tag):
     doc.recompute()
 
 
-
 for i in range(4):
 
     fn = "wing" + str(i)
@@ -202,7 +226,8 @@ for i in range(4):
     modifygeo.modifygeo(fn, 'Cut', pyl_x, 0, wing_z_height)
     modifygeo.factor_core(fn)
     modifygeo.factor_interior(fn)
-    modifygeo.factor_interog(fn)
+    #modifygeo.factor_interog(fn)
+    modifygeo.factor_farfield(fn)
     modifygeo.factor_wall(fn)
 
 meshbox()
