@@ -6,7 +6,6 @@ def modifygeo(name, shapename, cx, cy, cz):
     brep = '/tmp/' + shapename + '_Geometry.brep'
     shutil.copyfile(brep, '/home/orhan/ROBIN/' + name + '.brep')
 
-
     with open(name + '.geo', 'r') as file :
       filedata = file.readlines()
 
@@ -14,7 +13,6 @@ def modifygeo(name, shapename, cx, cy, cz):
     filedata = [line for line in filedata if not 'Save' in line]
     filedata = [line for line in filedata if not 'Mesh  3' in line]
     filedata = [line for line in filedata if not 'Coherence' in line]
-
 
     for i, line in enumerate(filedata):
         if 'Mesh.Format' in line:
@@ -26,6 +24,10 @@ def modifygeo(name, shapename, cx, cy, cz):
         if 'Merge' in line:
             filedata[i] =  "Merge \"" + name + ".brep\";\n"
         if 'mg_fus' in line:
+            if shapename == 'Cut':
+                import re
+                regex = r"\{(.*?)\}"
+                matches = re.findall(regex, line, re.MULTILINE | re.DOTALL)
             filedata[i] = filedata[i].replace("\"mg_fus\"", "1")
         if 'mg_wing' in line:
             if shapename == 'Cut':
@@ -33,8 +35,12 @@ def modifygeo(name, shapename, cx, cy, cz):
                 regex = r"\{(.*?)\}"
                 matches = re.findall(regex, line, re.MULTILINE | re.DOTALL)
             filedata[i] = filedata[i].replace("\"mg_wing\"", "1")
-        if 'mg_outer' in line:
-            filedata[i] = filedata[i].replace("\"mg_outer\"", "2")
+        #if 'mg_outer' in line:
+            #filedata[i] = filedata[i].replace("\"mg_outer\"", "2")
+        if 'mg_farfield' in line:
+            filedata[i] = filedata[i].replace("\"mg_farfield\"", "9")
+        if 'mg_interog' in line:
+            filedata[i] = filedata[i].replace("\"mg_interog\"", "11")
         if 'mg_vol' in line:
             filedata[i] = filedata[i].replace("\"mg_vol\"", "4")
 
@@ -49,7 +55,7 @@ def modifygeo(name, shapename, cx, cy, cz):
         filedata.append('Point(111)={' + str(cx) + ', ' + str(cy) + ', ' + str(cz) + '};\n')
         filedata.append('Field[1].NodesList = {111};\n')
     filedata.append('Field[2] = MathEval;\n')
-    filedata.append('Field[2].F = Sprintf("F1/2 + %g", lc / 1000);\n')
+    filedata.append('Field[2].F = Sprintf("F1/1 + %g", lc / 1000);\n')
     filedata.append('Background Field = 2;\n')
 
     # Write the file out again
