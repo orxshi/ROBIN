@@ -46,7 +46,7 @@ def modifygeo(name, shapename, cx, cy, cz):
 
     filedata.append('Mesh.MshFileVersion = 2.2;\n\n')
 
-    filedata.append('lc = 10;\n')
+    filedata.append('lc = 1;\n')
     filedata.append('Field[1] = Distance;\n')
     if shapename == 'Cut':
         filedata.append('Field[1].FacesList = {' + matches[0] + '};\n')
@@ -55,7 +55,7 @@ def modifygeo(name, shapename, cx, cy, cz):
         filedata.append('Point(111)={' + str(cx) + ', ' + str(cy) + ', ' + str(cz) + '};\n')
         filedata.append('Field[1].NodesList = {111};\n')
     filedata.append('Field[2] = MathEval;\n')
-    filedata.append('Field[2].F = Sprintf("F1/1 + %g", lc / 1000);\n')
+    filedata.append('Field[2].F = Sprintf("F1/3 + %g", lc / 1000);\n')
     filedata.append('Background Field = 2;\n')
 
     # Write the file out again

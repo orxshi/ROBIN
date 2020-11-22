@@ -10,4 +10,4 @@ tar cf heli.tar \
     wing3.geo \
     wing3.brep
 
-scp heli.tar osibliyev@172.16.10.1:/truba/home/osibliyev/Tailor3D/msh/heli
+scp heli.tar osibliyev@172.16.10.1:/truba/home/osibliyev/Tailor3D/msh/helifine

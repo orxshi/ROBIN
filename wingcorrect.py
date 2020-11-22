@@ -21,11 +21,13 @@ def makecylinder(rad, pos, ext_dir):
 
 chord = 2.61 * INCH_TO_M
 thick = 12 / 100;
+aoa = 4;
 twist = 8;
 wing_radius = 33.88 * INCH_TO_M
 root_cut_out = 0.24 * wing_radius 
 wing_z_start = 0
 wing_z_end = wing_radius - root_cut_out
+shaft_len = 0.15
 
 print("root_cut_out:", root_cut_out)
 print("wing_z_end:", wing_z_end)
@@ -50,14 +52,33 @@ for i in reversed(range(1, len(x)-1)):
     points.append(App.Vector(x[i], -y(x[i]), wing_z_start))
 points.append(points[0])
 
-
-def makewing(points):
+def makeshaft(points):
     polygon = Part.makePolygon(points)
-    #Part.show(polygon)
+    mat = polygon.Placement.toMatrix()
+    mat.rotateZ(-(twist+aoa) * math.pi / 180)
+    polygon.Placement = App.Placement(mat)
 
     polygon2 = Part.makePolygon(points)
     mat = polygon2.Placement.toMatrix()
-    mat.rotateZ(-twist * math.pi / 180)
+    mat.rotateZ(-(twist+aoa) * math.pi / 180)
+    mat.move(App.Vector(0,0,shaft_len))
+    polygon2.Placement = App.Placement(mat)
+
+    #face = Part.Face(polygon)
+    #wing = face.extrude(App.Vector(0,0,wing_z_end))
+    wing = Part.makeLoft([polygon, polygon2], True)
+    return wing
+
+
+def makewing(points):
+    polygon = Part.makePolygon(points)
+    mat = polygon.Placement.toMatrix()
+    mat.rotateZ(-(aoa) * math.pi / 180)
+    polygon.Placement = App.Placement(mat)
+
+    polygon2 = Part.makePolygon(points)
+    mat = polygon2.Placement.toMatrix()
+    mat.rotateZ(-(twist+aoa) * math.pi / 180)
     mat.move(App.Vector(0,0,wing_z_end))
     polygon2.Placement = App.Placement(mat)
 
@@ -69,6 +90,9 @@ def makewing(points):
 
 # make 4 wings
 wings = [makewing(points) for _ in range(4)]
+
+# make shafts
+shafts = [makeshaft(points) for _ in range(4)]
 
 #
 rot = App.Rotation(App.Vector(1,0,0), 90)
@@ -113,9 +137,10 @@ cylinders.append(cylinder)
 
 # reposition wings[1]
 mat = wings[1].Placement.toMatrix()
-mat.rotateZ(math.pi/2)
-mat.rotateY(-math.pi/2)
-mat.move(App.Vector(pyl_x - root_cut_out, -chord/2, wing_z_height))
+mat.rotateY(math.pi/2)
+mat.rotateX(math.pi/2)
+#mat.move(App.Vector(chord-root_cut_out, -chord/2, wing_z_height))
+mat.move(App.Vector(0, -chord/2, wing_z_height))
 wings[1].Placement = App.Placement(mat)
 cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+cyl_length/2 - wing_z_end/2, mat.A24+chord/2, wing_z_height), App.Vector(-1,0,0))
 cylinders.append(cylinder)
@@ -124,12 +149,15 @@ cylinders.append(cylinder)
 wings[2] = wings[0].copy()
 mat = wings[0].Placement.toMatrix()
 mat.rotateY(math.pi)
-mat.A24 = -(mat.A24 - wing_z_end)
+#mat.A24 = -(mat.A24 - wing_z_end)
+mat.A24 = mat.A24 - root_cut_out - wing_radius
 mat.A14 = wings[0].Placement.toMatrix().A14 + chord
 mat.A34 = wings[0].Placement.toMatrix().A34
 wings[2].Placement = App.Placement(mat)
 cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24 - cyl_length/2 - wing_z_end/2, wing_z_height), App.Vector(0,1,0))
 cylinders.append(cylinder)
+
+'''
 
 # reposition wings[3]
 wings[3] = wings[1].copy()
@@ -142,10 +170,36 @@ wings[3].Placement = App.Placement(mat)
 cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-cyl_length/2-wing_z_end/2, mat.A24-chord/2, wing_z_height), App.Vector(1,0,0))
 cylinders.append(cylinder)
 
+# hub
+hub_length = 0.1
+hub_dia = 0.1
+hub = Part.makeCylinder(hub_dia, hub_length, App.Vector(pyl_x, 0, wing_z_height-hub_length/2), App.Vector(0,0,1))
+'''
+
+# reposition shaft 1
+#overlap = shaft_len / 10
+#mat = wings[0].Placement.toMatrix()
+#mat.move(App.Vector(0, -(wing_radius - root_cut_out - overlap), 0))
+#shafts[0].Placement = App.Placement(mat)
+
+# reposition shaft 2
+#mat = wings[1].Placement.toMatrix()
+#mat.move(App.Vector(root_cut_out - overlap, 0, 0))
+#shafts[1].Placement = App.Placement(mat)
+
+# join hub and shaft
+#joined = BOPTools.JoinAPI.connect([hub, shafts[0]])
+
 Part.show(wings[0])
 Part.show(wings[1])
 Part.show(wings[2])
-Part.show(wings[3])
+#Part.show(wings[3])
+#Part.show(hub)
+#Part.show(shafts[0])
+#Part.show(shafts[1])
+#Part.show(joined)
+
+'''
 
 wings[0].exportStep("wing0.step")
 wings[1].exportStep("wing1.step")
@@ -227,7 +281,10 @@ def meshwing(cylinder, wing, tag):
     doc.removeObject("mg_vol")
     doc.recompute()
 
+'''
 
+
+'''
 for i in range(4):
 
     fn = "wing" + str(i)
@@ -245,3 +302,4 @@ for i in range(4):
 #modifygeo.factor_core("box")
 #modifygeo.factor_interior("box")
 #modifygeo.factor_farfield("box")
+'''
