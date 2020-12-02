@@ -55,7 +55,7 @@ def modifygeo(name, shapename, cx, cy, cz):
         filedata.append('Point(111)={' + str(cx) + ', ' + str(cy) + ', ' + str(cz) + '};\n')
         filedata.append('Field[1].NodesList = {111};\n')
     filedata.append('Field[2] = MathEval;\n')
-    filedata.append('Field[2].F = Sprintf("F1/3 + %g", lc / 1000);\n')
+    filedata.append('Field[2].F = Sprintf("F1/2 + %g", lc / 1000);\n')
     filedata.append('Background Field = 2;\n')
 
     # Write the file out again

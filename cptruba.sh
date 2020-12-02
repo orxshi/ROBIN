@@ -8,6 +8,8 @@ tar cf heli.tar \
     wing2.geo \
     wing2.brep \
     wing3.geo \
-    wing3.brep
+    wing3.brep \
+    hubshaft.geo \
+    hubshaft.brep
 
-scp heli.tar osibliyev@172.16.10.1:/truba/home/osibliyev/Tailor3D/msh/helifine
+scp heli.tar osibliyev@172.16.10.1:/truba/home/osibliyev/Tailor3D/msh/heli

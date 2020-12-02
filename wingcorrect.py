@@ -87,7 +87,6 @@ def makewing(points):
     wing = Part.makeLoft([polygon, polygon2], True)
     return wing
 
-
 # make 4 wings
 wings = [makewing(points) for _ in range(4)]
 
@@ -119,9 +118,12 @@ off_side_wing = halffuswidthy / 2
 cyl_rad = chord * 10
 #cyl_rad = chord * 100
 
+hub_cen = App.Vector(pyl_x, 0, wing_z_height)
+
 print('cnt(0):', pyl_x)
 print('cnt(1):', 0)
 print('cnt(2):', wing_z_height)
+
 
 cylinders = []
 
@@ -130,7 +132,6 @@ mat = wings[0].Placement.toMatrix()
 mat.rotateX(math.pi/2)
 mat.move(App.Vector(pyl_x-chord/2, wing_radius, wing_z_height))
 wings[0].Placement = App.Placement(mat)
-mattemp = wings[0].Placement.toMatrix()
 mat = wings[0].Placement.toMatrix()
 cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+chord/2, mat.A24 + cyl_length/2 - wing_z_end/2, wing_z_height), App.Vector(0,-1,0))
 cylinders.append(cylinder)
@@ -142,26 +143,28 @@ mat.rotateX(math.pi/2)
 #mat.move(App.Vector(chord-root_cut_out, -chord/2, wing_z_height))
 mat.move(App.Vector(0, -chord/2, wing_z_height))
 wings[1].Placement = App.Placement(mat)
-cylinder = makecylinder(cyl_rad, App.Vector(mat.A14+cyl_length/2 - wing_z_end/2, mat.A24+chord/2, wing_z_height), App.Vector(-1,0,0))
+mat = wings[1].Placement.toMatrix()
+mat.A14 = pyl_x - wing_radius
+wings[1].Placement = App.Placement(mat)
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14 + cyl_length/2 + wing_z_end/2, mat.A24+chord/2, wing_z_height), App.Vector(-1,0,0))
 cylinders.append(cylinder)
 
 # reposition wings[2]
-wings[2] = wings[0].copy()
 mat = wings[0].Placement.toMatrix()
+mat.rotateX(math.pi)
 mat.rotateY(math.pi)
 #mat.A24 = -(mat.A24 - wing_z_end)
-mat.A24 = mat.A24 - root_cut_out - wing_radius
+mat.A24 = 0 - wing_radius
 mat.A14 = wings[0].Placement.toMatrix().A14 + chord
 mat.A34 = wings[0].Placement.toMatrix().A34
 wings[2].Placement = App.Placement(mat)
-cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24 - cyl_length/2 - wing_z_end/2, wing_z_height), App.Vector(0,1,0))
+#cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24 - cyl_length/2 - wing_z_end/2, wing_z_height), App.Vector(0,1,0))
+cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-chord/2, mat.A24 - wing_z_end/2, wing_z_height), App.Vector(0,1,0))
 cylinders.append(cylinder)
 
-'''
-
 # reposition wings[3]
-wings[3] = wings[1].copy()
 mat = wings[1].Placement.toMatrix()
+mat.rotateY(math.pi)
 mat.rotateX(math.pi)
 mat.A24 = wings[1].Placement.toMatrix().A24 + chord
 mat.A34 = wings[1].Placement.toMatrix().A34
@@ -171,49 +174,70 @@ cylinder = makecylinder(cyl_rad, App.Vector(mat.A14-cyl_length/2-wing_z_end/2, m
 cylinders.append(cylinder)
 
 # hub
-hub_length = 0.1
+hub_length = 0.05
 hub_dia = 0.1
 hub = Part.makeCylinder(hub_dia, hub_length, App.Vector(pyl_x, 0, wing_z_height-hub_length/2), App.Vector(0,0,1))
-'''
+hubsphere = Part.makeSphere(root_cut_out*1.5, hub_cen)
+Part.show(hubsphere)
 
 # reposition shaft 1
-#overlap = shaft_len / 10
-#mat = wings[0].Placement.toMatrix()
-#mat.move(App.Vector(0, -(wing_radius - root_cut_out - overlap), 0))
-#shafts[0].Placement = App.Placement(mat)
+overlap = shaft_len / 50
+mat = wings[0].Placement.toMatrix()
+mat.move(App.Vector(0, -(wing_radius - root_cut_out - overlap), 0))
+shafts[0].Placement = App.Placement(mat)
 
 # reposition shaft 2
-#mat = wings[1].Placement.toMatrix()
+mat = wings[1].Placement.toMatrix()
+mat.A14 = pyl_x - root_cut_out - overlap
 #mat.move(App.Vector(root_cut_out - overlap, 0, 0))
-#shafts[1].Placement = App.Placement(mat)
+shafts[1].Placement = App.Placement(mat)
+
+# reposition shaft 3
+mat = wings[2].Placement.toMatrix()
+mat.A24 = -root_cut_out - overlap
+shafts[2].Placement = App.Placement(mat)
+
+# reposition shaft 4
+mat = wings[3].Placement.toMatrix()
+mat.A14 = pyl_x + root_cut_out + overlap
+shafts[3].Placement = App.Placement(mat)
 
 # join hub and shaft
-#joined = BOPTools.JoinAPI.connect([hub, shafts[0]])
+hubshaft = BOPTools.JoinAPI.connect([hub, shafts[0], shafts[1], shafts[2], shafts[3]])
 
 Part.show(wings[0])
 Part.show(wings[1])
 Part.show(wings[2])
-#Part.show(wings[3])
+Part.show(wings[3])
 #Part.show(hub)
 #Part.show(shafts[0])
 #Part.show(shafts[1])
-#Part.show(joined)
-
-'''
+#Part.show(shafts[2])
+#Part.show(shafts[3])
+Part.show(hubshaft)
 
 wings[0].exportStep("wing0.step")
 wings[1].exportStep("wing1.step")
 wings[2].exportStep("wing2.step")
 wings[3].exportStep("wing3.step")
+hubshaft.exportStep("hubshaft.step")
 
-Part.show(cylinders[0])
-Part.show(cylinders[1])
-Part.show(cylinders[2])
-Part.show(cylinders[3])
+hubaabblen = 2*root_cut_out+2*overlap
+hubaabb = Part.makeBox(hubaabblen, hubaabblen, hub_length, hub_cen)
+mat = hubaabb.Placement.toMatrix()
+mat.A14 = mat.A14 - hubaabblen/2
+mat.A24 = mat.A24 - hubaabblen/2
+mat.A34 = mat.A34 - hub_length/2
+hubaabb.Placement = App.Placement(mat)
+Part.show(hubaabb)
 
-box = Part.makeBox(boxlen, boxlen, boxlen, App.Vector(pyl_x-boxlen/2, 0-boxlen/2, wing_z_height-boxlen/2))
+#Part.show(cylinders[0])
+#Part.show(cylinders[1])
+#Part.show(cylinders[2])
+#Part.show(cylinders[3])
+
+#box = Part.makeBox(boxlen, boxlen, boxlen, App.Vector(pyl_x-boxlen/2, 0-boxlen/2, wing_z_height-boxlen/2))
 #Part.show(box)
-
 
 def meshbox():
     obj = doc.addObject("Part::Feature","Box")
@@ -239,6 +263,45 @@ def meshbox():
     doc.removeObject("Box")
     doc.removeObject("FEMMeshGmsh")
     doc.removeObject("mg_outer")
+    doc.removeObject("mg_vol")
+    doc.recompute()
+
+
+def meshhubshaft():
+    cut = hubsphere.cut(hubshaft)
+    cut_object = doc.addObject("Part::Feature","Cut")
+    cut_object.Shape = cut
+    if not cut_object:
+        cut_object.ViewObject.Transparency = 50
+
+    mesh = ObjectsFem.makeMeshGmsh(doc, 'FEMMeshGmsh')
+    mesh.Part = cut_object
+
+    mg_wing = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_wing')
+    mg_interog = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_interog')
+    mg_vol = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_vol')
+
+    temp = []
+    for i in range(2,len(cut_object.Shape.Faces)+1):
+        temp.append((cut_object, 'Face' + str(i)))
+
+    mg_wing.References = temp
+
+    temp = []
+    for i in range(1,2):
+        temp.append((cut_object, 'Face' + str(i)))
+
+    mg_interog.References = temp
+    mg_vol.References = (cut_object, 'Solid1')
+
+    import femmesh.gmshtools as gmshtools
+    gmsh_mesh = gmshtools.GmshTools(mesh)
+    gmsh_mesh.create_mesh()
+
+    doc.removeObject("Cut")
+    doc.removeObject("FEMMeshGmsh")
+    doc.removeObject("mg_wing")
+    doc.removeObject("mg_interog")
     doc.removeObject("mg_vol")
     doc.recompute()
 
@@ -281,25 +344,21 @@ def meshwing(cylinder, wing, tag):
     doc.removeObject("mg_vol")
     doc.recompute()
 
-'''
 
 
-'''
+meshhubshaft()
+modifygeo.modifygeo("hubshaft", 'Cut', pyl_x, 0, wing_z_height)
+
 for i in range(4):
 
     fn = "wing" + str(i)
 
     meshwing(cylinders[i], wings[i], i)
     modifygeo.modifygeo(fn, 'Cut', pyl_x, 0, wing_z_height)
-    #modifygeo.factor_core(fn)
-    #modifygeo.factor_interior(fn)
-    #modifygeo.factor_interog(fn)
-    #modifygeo.factor_farfield(fn)
-    #modifygeo.factor_wall(fn)
+
 
 #meshbox()
 #modifygeo.modifygeo("box", 'Box', pyl_x, 0, wing_z_height)
 #modifygeo.factor_core("box")
 #modifygeo.factor_interior("box")
 #modifygeo.factor_farfield("box")
-'''
