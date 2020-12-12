@@ -15,9 +15,15 @@ def modifygeo(name, shapename, cx, cy, cz):
     filedata = [line for line in filedata if not 'Coherence' in line]
 
     for i, line in enumerate(filedata):
+        if 'Mesh.CharacteristicLengthMin =' in line:
+            filedata[i] = 'Mesh.CharacteristicLengthMin = 0.005;\n'
         if 'Mesh.Format' in line:
             filedata[i] = 'Mesh.Format = 1;\n'
-        if 'Order' in line:
+        if 'Mesh.Algorithm =' in line:
+            filedata[i] = 'Mesh.Algorithm = 6;\n'
+        if 'Mesh.Algorithm3D =' in line:
+            filedata[i] = 'Mesh.Algorithm3D = 4;\n'
+        if 'ElementOrder' in line:
             filedata[i] = 'Mesh.ElementOrder = 1;\n'
         if 'Save' in line:
             filedata[i] =  "Save \"" + name + ".msh\";"
@@ -46,7 +52,7 @@ def modifygeo(name, shapename, cx, cy, cz):
 
     filedata.append('Mesh.MshFileVersion = 2.2;\n\n')
 
-    filedata.append('lc = 1;\n')
+    filedata.append('lc = Mesh.CharacteristicLengthMin;\n')
     filedata.append('Field[1] = Distance;\n')
     if shapename == 'Cut':
         filedata.append('Field[1].FacesList = {' + matches[0] + '};\n')
@@ -55,7 +61,7 @@ def modifygeo(name, shapename, cx, cy, cz):
         filedata.append('Point(111)={' + str(cx) + ', ' + str(cy) + ', ' + str(cz) + '};\n')
         filedata.append('Field[1].NodesList = {111};\n')
     filedata.append('Field[2] = MathEval;\n')
-    filedata.append('Field[2].F = Sprintf("F1/2 + %g", lc / 1000);\n')
+    filedata.append('Field[2].F = Sprintf("F1/2 + %g", lc);\n')
     filedata.append('Background Field = 2;\n')
 
     # Write the file out again

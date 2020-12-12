@@ -42,7 +42,7 @@ def y(x):
     y = thick * chord / 0.2 * (C1 * xc**(1/2) - C2 * xc**(1) - C3 * xc**(2) + C4 * xc**(3) - C5 * xc**(4))
     return y
 
-nx = 10;
+nx = 100; # 10
 x = numpy.linspace(0, chord, nx)
 
 points = []

@@ -24,12 +24,20 @@ def U(c, xl):
 
         if c[1] != 0:
             t = c[0] + c[1] * abs((xl + c[2]) / c[3]) ** c[4]
+            #assert c[3] != 0
+            #if ((xl + c[2]) / c[3]) < 0:
+                #print("xl:", xl)
+                #print("c[2]:", c[2])
+                #print("c[3]:", c[3])
+            #assert ((xl + c[2]) / c[3]) > 0
+            #t = c[0] + c[1] * ((xl + c[2]) / c[3]) ** c[4]
         else:
             t = c[0]
 
         if abs(t) <= ZERO:
             t = 0
 
+        assert c[7] > 0
         u += c[6] * t ** (1./c[7])
 
     return u;
@@ -91,7 +99,9 @@ class Fuselage:
         elif xl < 1.9:
             c = [5.0, -3.0, -0.8, 1.1, 1.0, 0.0, 1.0, 1.0]
         elif xl < 2.0:
-            c = [2.0, 0.0, 0.0, 0.0, 0.0, 0.04, 1.0, 1.0]
+            #c = [2.0, 0.0, 0.0, 0.0, 0.0, 0.04, 1.0, 1.0]
+            c = [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0]
+            #c = [2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         else:
             print("error N")
 
@@ -148,12 +158,21 @@ class Pylon:
 
 
 def yl(xl, phi, part):
+    if part.N(xl) == 0:
+        print("phi:", phi)
+        print("xl:", xl)
     return r(part.H(xl), part.W(xl), part.N(xl), phi) * math.sin(phi)
 
 def zl(xl, phi, part):
+    if part.N(xl) == 0:
+        print("phi:", phi)
+        print("xl:", xl)
     return r(part.H(xl), part.W(xl), part.N(xl), phi) * math.cos(phi) + part.Z(xl)
 
 def r(H, W, N, phi):
+    if  N == 0:
+        print("N:", N)
+    assert N != 0
     a = abs(0.5 * H * math.sin(phi)) ** N + abs(0.5 * W * math.cos(phi)) ** N
     b = (0.25 * H * W) ** N
     return (b / a) ** (1./N)
@@ -167,9 +186,9 @@ dia = 50
 
 #print("L:", L)
 
-xm = numpy.linspace(0.00001, 1.997, 99) # 20
-xp = numpy.linspace(0.40001, 1.018, 99) # 20
-p = numpy.linspace(0, 2*math.pi, 10) # 30
+xm = numpy.linspace(0.00001, 1.997, 999)
+xp = numpy.linspace(0.40001, 1.018, 999)
+p = numpy.linspace(0.00001, 2.0*math.pi, 10)
 
 
 def makepart(part, x):
@@ -194,6 +213,7 @@ pylon = makepart(Pylon, xp)
 
 # make compound
 heli = BOPTools.JoinAPI.connect([fuselage, pylon])
+#heli = Part.makeCompound([fuselage, pylon])
 Part.show(heli)
 
 # make heli a solid
@@ -212,6 +232,7 @@ def meshwing():
     import ObjectsFem
     mesh = ObjectsFem.makeMeshGmsh(doc, 'FEMMeshGmsh')
     mesh.ElementDimension = 3
+    #mesh.CharacteristicLengthMax = 0.01
     mesh.Part = cut_object;
 
     mg_fus = ObjectsFem.makeMeshGroup(App.ActiveDocument, mesh, False, 'mg_fus')
