@@ -188,7 +188,7 @@ dia = 50
 
 xm = numpy.linspace(0.00001, 1.997, 999)
 xp = numpy.linspace(0.40001, 1.018, 999)
-p = numpy.linspace(0.00001, 2.0*math.pi, 10)
+p = numpy.linspace(0.00001, 2.0*math.pi, 5)
 
 
 def makepart(part, x):
@@ -200,12 +200,13 @@ def makepart(part, x):
         points.append(points[0])
         polygons.append(Part.makePolygon(points))
 
-    loft = Part.makeLoft(polygons)
+    loft = Part.makeLoft(polygons, True, False)
     cap1 = Part.Face(polygons[0])
     cap2 = Part.Face(polygons[-1])
-    shell = Part.Shell(loft.Faces+[cap1, cap2])
-    Part.show(shell)
-    return shell
+    #shell = Part.Shell(loft.Faces+[cap1, cap2])
+    #Part.show(shell)
+    #return shell
+    return loft
 
 
 fuselage = makepart(Fuselage, xm)
@@ -213,6 +214,8 @@ pylon = makepart(Pylon, xp)
 
 # make compound
 heli = BOPTools.JoinAPI.connect([fuselage, pylon])
+#heli = BOPTools.JoinAPI.connect([pylon, fuselage])
+#heli = BOPTools.JoinAPI.embed([fuselage, pylon])
 #heli = Part.makeCompound([fuselage, pylon])
 Part.show(heli)
 

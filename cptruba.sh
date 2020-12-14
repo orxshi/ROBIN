@@ -12,4 +12,4 @@ tar cf heli.tar \
     hubshaft.geo \
     hubshaft.brep
 
-scp heli.tar osibliyev@172.16.10.1:/truba/home/osibliyev/Tailor3D/msh/heli2
+scp heli.tar osibliyev@172.16.10.1:/truba/home/osibliyev/Tailor3D/msh/helifine
