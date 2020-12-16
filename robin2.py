@@ -181,14 +181,16 @@ def r(H, W, N, phi):
 #L = 78.57 / 2 # so that length of body is 78.70
 #L = 78.70 * INCH_TO_M / 2
 #L = 78.70 * INCH_TO_M
-L = 78.57 * INCH_TO_M / 1.997
-dia = 50
+cutbegin = 0.001
+cutend = 1.980 # 1.997
+L = 78.57 * INCH_TO_M / cutend
+dia = 20
 
 #print("L:", L)
 
-xm = numpy.linspace(0.00001, 1.997, 999)
+xm = numpy.linspace(cutbegin, cutend, 999)
 xp = numpy.linspace(0.40001, 1.018, 999)
-p = numpy.linspace(0.00001, 2.0*math.pi, 5)
+p = numpy.linspace(0.00001, 2.0*math.pi, 20)
 
 
 def makepart(part, x):

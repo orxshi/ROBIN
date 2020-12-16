@@ -40,6 +40,7 @@ def modifygeo(name, shapename, cx, cy, cz):
             filedata[i] = 'Mesh.Algorithm3D = 10;\n'
         if 'ElementOrder' in line:
             filedata[i] = 'Mesh.ElementOrder = 1;\n'
+            filedata[i-1] = filedata[i-1] + '\n'
         if 'Save' in line:
             filedata[i] =  "Save \"" + name + ".msh\";"
         if 'Merge' in line:
@@ -56,15 +57,12 @@ def modifygeo(name, shapename, cx, cy, cz):
                 regex = r"\{(.*?)\}"
                 matches = re.findall(regex, line, re.MULTILINE | re.DOTALL)
             filedata[i] = filedata[i].replace("\"mg_wing\"", "1")
-        #if 'mg_outer' in line:
-            #filedata[i] = filedata[i].replace("\"mg_outer\"", "2")
         if 'mg_farfield' in line:
             filedata[i] = filedata[i].replace("\"mg_farfield\"", "9")
         if 'mg_interog' in line:
             filedata[i] = filedata[i].replace("\"mg_interog\"", "11")
         if 'mg_vol' in line:
             filedata[i] = filedata[i].replace("\"mg_vol\"", "4")
-            filedata[i] = filedata[i] + '\n'
 
     filedata.append('Mesh.MshFileVersion = 2.2;\n')
     filedata.append('Mesh.MeshSizeExtendFromBoundary = 0;\n')

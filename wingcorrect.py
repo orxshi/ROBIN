@@ -42,8 +42,8 @@ def y(x):
     y = thick * chord / 0.2 * (C1 * xc**(1/2) - C2 * xc**(1) - C3 * xc**(2) + C4 * xc**(3) - C5 * xc**(4))
     return y
 
-nx = 100; # 10
-x = numpy.linspace(0, chord, nx)
+nx = 20;
+x = numpy.linspace(0.00001, chord, nx)
 
 points = []
 for i in range(len(x)):
@@ -64,10 +64,8 @@ def makeshaft(points):
     mat.move(App.Vector(0,0,shaft_len))
     polygon2.Placement = App.Placement(mat)
 
-    #face = Part.Face(polygon)
-    #wing = face.extrude(App.Vector(0,0,wing_z_end))
-    wing = Part.makeLoft([polygon, polygon2], True)
-    return wing
+    loft = Part.makeLoft([polygon, polygon2], True)
+    return loft
 
 
 def makewing(points):
@@ -82,10 +80,9 @@ def makewing(points):
     mat.move(App.Vector(0,0,wing_z_end))
     polygon2.Placement = App.Placement(mat)
 
-    #face = Part.Face(polygon)
-    #wing = face.extrude(App.Vector(0,0,wing_z_end))
-    wing = Part.makeLoft([polygon, polygon2], True)
-    return wing
+    loft = Part.makeLoft([polygon, polygon2], True)
+    return loft
+
 
 # make 4 wings
 wings = [makewing(points) for _ in range(4)]
