@@ -1,10 +1,6 @@
 # Reference 1: Mineck, Raymond E. Steady and periodic pressure measurements on a generic helicopter fuselage model in the presence of a rotor. NASA Langley Research Center, 2000.
 # Reference 2: Shibliyev, Orxan, and Ibrahim Sezai. "Overset Grid Assembler and Flow Solver with Adaptive Spatial Load Balancing." Applied Sciences 11.11 (2021): 5132.
 
-# Some of coefficients [C1,...,C8] in Reference 1 are modified since the original coefficients do not produce the expected output.
-# In appendix of Reference 2, some of the coefficients are modified.
-# Coefficients in coef_fuselage.py and coef_pylon.py are taken from Reference 2.
-
 # Some numbers might seem weird such as 0.001 and not 0.
 # This is needed, otherwise, code fails due to division by zero.
 
@@ -37,6 +33,11 @@ nx = 10; # number of points on airfoil profile.
 hub_center = [0.696 * L, 0, 0.322 * L]
 cylinder_radius = chord * 10
 cylinder_length = cylinder_radius * 2
+# Hub parameters
+hub_length = 0.05
+hub_dia = 0.1
+shaft_len = 0.15
+overlap = shaft_len / 50
 
 # ----------------------------------------------------
 
@@ -46,6 +47,16 @@ points = make_NACA0012_points(x, chord)
 
 # Make 4 blades.
 blade = [make_blade(points, aoa, twist, blade_length) for _ in range(4)]
+
+# Make 4 hub shafts to be connected to associated blade.
+shafts = [makeshaft(points, aoa, twist) for _ in range(4)]
+
+# Make a hub.
+hub = Part.makeCylinder(hub_dia, hub_length, App.Vector(hub_center[0], 0, hub_center[2] - hub_length/2), App.Vector(0,0,1))
+
+# Make a sphere to be cut with the hub.
+hubsphere = Part.makeSphere(root_cut_out*1.5, hub_cen)
+sphere = Part.makeSphere(dia,FreeCAD.Vector(1,0,0))
 
 # Make 4 meshes.
 for i in range(4):

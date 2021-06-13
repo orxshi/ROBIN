@@ -51,7 +51,7 @@ helicopter = BOPTools.JoinAPI.connect([fuselage, pylon])
 # Make the connected components a solid.
 solid_helicopter = Part.Solid(helicopter)
 
-# Make a sphere to be used for meshing.
+# Make a sphere to be cut with the main body.
 sphere = Part.makeSphere(dia,FreeCAD.Vector(1,0,0))
 
 # Cut helicopter from the sphere.
