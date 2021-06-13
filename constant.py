@@ -1,0 +1,2 @@
+INCH_TO_METER = 0.0254
+ZERO = 1e-10
