@@ -1,5 +1,3 @@
-# INCOMPLETE
-
 I used these python script to generate three-dimensional, tetrahedral mesh in my PhD study.
 
 The ROBIN (ROtor Body INteraction) is a generic helicopter configuration consists of a fuselage and a pylon. From now on, the fuselage and pylon configuration is termed as main body. Blades, hub and other features which are not included in the main body need to be generated separately. In this code, in addition to the main body, four NACA0012-profiled blades and a hub are modelled.
